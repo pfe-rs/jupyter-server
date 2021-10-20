@@ -4,6 +4,11 @@
   hosts: hosts
   vars:
     users_json: "{{ lookup('file', 'users.json') | from_json }}"
+  vars_prompt:
+    - name: testbench_branch
+      prompt: Testbench branch
+      default: "master"
+      private: no
   remote_user: root
 
   tasks:
@@ -147,6 +152,8 @@
     ansible.builtin.git:
       repo: git@github.com:pfe-petnica/jupyter-testbench.git
       dest: /srv/testbench
+      single_branch: yes
+      version: "{{ testbench_branch }}"
       key_file: /root/.ssh/id_ed25519
       accept_hostkey: yes
 
