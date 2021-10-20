@@ -105,7 +105,7 @@
   - name: Configure Let's Encrypt certificate
     ansible.builtin.command:
       cmd: certbot --nginx --redirect -d jupyter.pfe.rs -d dashboard.pfe.rs --non-interactive --agree-tos -m admin@pfe.rs
-      creates: /etc/letsencrypt/live/jupyter.pfe.rs/privkey.pem
+      # creates: /etc/letsencrypt/live/jupyter.pfe.rs/privkey.pem
 
   - name: Reload Nginx
     ansible.builtin.systemd:
@@ -126,12 +126,6 @@
         - docker.io
         - python3-docker
       state: latest
-
-  - name: Restrict container inbound connections
-    ansible.builtin.iptables:
-      chain: DOCKER-USER
-      in_interface: eth0
-      jump: DROP
 
   - name: Install Git
     ansible.builtin.package:
@@ -172,9 +166,14 @@
       build:
         path: /srv/testbench
         args:
-          listen_port: 8002
           restart: always
       source: build
+
+  - name: Restrict container inbound connections
+    ansible.builtin.iptables:
+      chain: DOCKER-USER
+      in_interface: eth0
+      jump: DROP
 
   - name: Start Dashboard container
     community.docker.docker_container:
