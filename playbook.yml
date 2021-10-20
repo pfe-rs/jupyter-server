@@ -169,13 +169,38 @@
       executable: pip3
       name: /srv/testbench
 
+  - name: Copy dashboard.json
+    ansible.builtin.template:
+      src: config/testbench/dashboard.json
+      dest: /etc/dashboard.json
+      owner: root
+      group: root
+      mode: '0644'
+      force: yes
+
+  - name: Copy testbench.json
+    ansible.builtin.template:
+      src: config/testbench/testbench.json
+      dest: /etc/testbench.json
+      owner: root
+      group: root
+      mode: '0644'
+      force: yes
+
+  - name: Copy users.json
+    ansible.builtin.template:
+      src: users.json
+      dest: /etc/users.json
+      owner: root
+      group: root
+      mode: '0640'
+      force: yes
+
   - name: Build Dashboard container
     community.docker.docker_image:
       name: dashboard
       build:
         path: /srv/testbench
-        args:
-          restart: always
       source: build
       force_source: yes
 
@@ -185,9 +210,14 @@
       image: dashboard
       state: started
       restart: yes
-      restart_policy: always
+      restart_policy: unless-stopped
       ports:
       - "127.0.0.1:8002:80"
+      mounts:
+      - source: /etc/users.json
+        target: /etc/users.json
+        read_only: yes
+        type: bind
       container_default_behavior: compatibility
 
   - name: Install JupyterHub dependencies
@@ -306,30 +336,3 @@
       mode: '0750'
       remote_src: yes
     with_items: "{{ users_json }}"
-
-  - name: Copy dashboard.json
-    ansible.builtin.template:
-      src: config/testbench/dashboard.json
-      dest: /etc/dashboard.json
-      owner: root
-      group: root
-      mode: '0644'
-      force: yes
-
-  - name: Copy testbench.json
-    ansible.builtin.template:
-      src: config/testbench/testbench.json
-      dest: /etc/testbench.json
-      owner: root
-      group: root
-      mode: '0644'
-      force: yes
-
-  - name: Copy users.json
-    ansible.builtin.template:
-      src: users.json
-      dest: /etc/users.json
-      owner: root
-      group: root
-      mode: '0644'
-      force: yes
