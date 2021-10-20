@@ -292,3 +292,30 @@
       group: root
       state: link
     with_items: "{{ users_json }}"
+
+  - name: Copy dashboard.json
+    ansible.builtin.template:
+      src: config/testbench/dashboard.json
+      dest: /etc/dashboard.json
+      owner: root
+      group: root
+      mode: '0644'
+      force: yes
+
+  - name: Copy testbench.json
+    ansible.builtin.template:
+      src: config/testbench/testbench.json
+      dest: /etc/testbench.json
+      owner: root
+      group: root
+      mode: '0644'
+      force: yes
+
+  - name: Copy users.json
+    ansible.builtin.template:
+      src: users.json
+      dest: /etc/users.json
+      owner: root
+      group: root
+      mode: '0644'
+      force: yes

@@ -40,12 +40,3 @@ if users is not None:
             break
     with open('users.json', 'w', encoding='utf-8') as users_file:
         dump(users, users_file, indent=4)
-    if isfile('/etc/dashboard.json'):
-        with open('/etc/dashboard.json', 'r+', encoding='utf-8') as dashboard_file:
-            dashboard: dict = load(dashboard_file)
-            dashboard['users'] = {}
-            for user in users:
-                dashboard['users'][user['username']] = user['name']
-            dashboard_file.seek(0)
-            dump(dashboard, dashboard_file, indent=4)
-            dashboard_file.truncate()
