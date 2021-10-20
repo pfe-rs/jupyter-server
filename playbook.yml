@@ -5,7 +5,7 @@
   remote_user: root
 
   tasks:
-  
+
   - name: Install web server
     ansible.builtin.package:
       name: nginx
@@ -13,7 +13,7 @@
 
   - name: Nginx Dashboard site configuration
     ansible.builtin.template:
-      src: nginx/dashboard.conf
+      src: config/nginx/dashboard.conf
       dest: /etc/nginx/sites-available/dashboard
       owner: root
       group: root
@@ -30,7 +30,7 @@
 
   - name: Nginx JupyterHub site configuration
     ansible.builtin.template:
-      src: nginx/jupyterhub.conf
+      src: config/nginx/jupyterhub.conf
       dest: /etc/nginx/sites-available/jupyter
       owner: root
       group: root
@@ -72,6 +72,11 @@
       repo: git@github.com:pfe-petnica/jupyter-testbench.git
       dest: /srv/testbench
 
+  - name: Install Testbench
+    pip:
+      executable: pip3
+      name: /srv/testbench
+
   - name: Build Dashboard container
     community.docker.docker_image:
       name: dashboard
@@ -89,3 +94,71 @@
       state: started
       ports:
       - "8002:80"
+
+  - name: Install JupyterHub dependencies
+    ansible.builtin.package:
+      name: 
+      - npm
+      - nodejs
+      - python3-pip
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - jq
+      state: latest
+
+  - name: Install JupyterHub
+    pip:
+      executable: pip3
+      name:
+      - jupyterhub
+      - notebook
+
+  - name: Install configurable-http-proxy
+    community.general.npm:
+      name: configurable-http-proxy
+      global: yes
+
+  - name: Create JupyterHub root directory
+    ansible.builtin.file:
+      path: /srv/jupyterhub
+      state: directory
+      mode: '0755'
+
+  - name: Create JupyterHub configuration directory
+    ansible.builtin.file:
+      path: /etc/jupyterhub
+      state: directory
+      mode: '0755'
+
+  - name: JupyterHub configuration file
+    ansible.builtin.template:
+      src: config/jupyterhub/jupyter_config.py
+      dest: /etc/jupyterhub/jupyter_config.py
+      owner: root
+      group: root
+      mode: '0644'
+      force: no
+
+  - name: Initialize JupyterHub
+    ansible.builtin.command: jupyterhub --generate-config
+    args:
+      chdir: /srv/jupyterhub
+      creates: /srv/jupyterhub/jupyterhub.sqlite
+
+  - name: JupyterHub system service file
+    ansible.builtin.template:
+      src: config/systemd/jupyterhub.service
+      dest: /etc/systemd/system/jupyterhub.service
+      owner: root
+      group: root
+      mode: '0644'
+      force: no
+
+  - name: Start JupyterHub
+    ansible.builtin.systemd:
+      name: jupyterhub
+      state: started
+      enabled: yes

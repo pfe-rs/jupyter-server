@@ -1,0 +1,14 @@
+[Unit]
+Description=JupyterHub
+After=syslog.target network.target
+
+[Service]
+User=root
+Environment="PATH=/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+ExecStart=/usr/local/bin/jupyterhub -f /etc/jupyterhub/jupyterhub_config.py
+StandardError=append:/var/log/jupyterhub/err.log
+StandardOutput=append:/var/log/jupyterhub/out.log
+WorkingDirectory=/srv/jupyterhub
+
+[Install]
+WantedBy=multi-user.target
