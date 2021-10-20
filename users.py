@@ -11,7 +11,7 @@ def get_username(name: str) -> str:
     name = name.replace('ž', 'z')
     name = name.replace('ć', 'c')
     name = name.replace('č', 'c')
-    name = name.replace('š', 'c')
+    name = name.replace('š', 's')
     name = name.replace('đ', 'dj')
     return name
 
