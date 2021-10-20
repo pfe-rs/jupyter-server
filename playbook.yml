@@ -44,7 +44,6 @@
       owner: root
       group: root
       mode: '0644'
-      force: yes
 
   - name: Update repositories
     apt:
@@ -102,7 +101,6 @@
       owner: root
       group: root
       mode: '0644'
-      force: no
 
   - name: Install Certbot for Nginx
     ansible.builtin.package:
@@ -146,7 +144,6 @@
       owner: root
       group: root
       mode: '0400'
-      force: no
 
   - name: Checkout Testbench from GitHib
     ansible.builtin.git:
@@ -176,7 +173,6 @@
       owner: root
       group: root
       mode: '0644'
-      force: yes
 
   - name: Copy testbench.json
     ansible.builtin.template:
@@ -185,7 +181,6 @@
       owner: root
       group: root
       mode: '0644'
-      force: yes
 
   - name: Copy users.json
     ansible.builtin.template:
@@ -194,7 +189,6 @@
       owner: root
       group: root
       mode: '0640'
-      force: yes
 
   - name: Build Dashboard container
     community.docker.docker_image:
@@ -259,7 +253,12 @@
       owner: root
       group: root
       mode: '0644'
-      force: no
+
+  - name: JupyterHub logs directory
+    ansible.builtin.file:
+      path: /var/log/jupyterhub
+      state: directory
+      mode: '0755'
 
   - name: JupyterHub system service file
     ansible.builtin.template:
@@ -268,7 +267,6 @@
       owner: root
       group: root
       mode: '0644'
-      force: no
 
   - name: Start JupyterHub
     ansible.builtin.systemd:
@@ -297,6 +295,10 @@
       name:
       - libopencv-dev
       - python3-opencv
+      - texlive-latex-extra
+      - texlive-fonts-recommended
+      - dvipng
+      - cm-super
       state: latest
 
   - name: Copy requirements.txt temporarily for Jupyter configuration
@@ -306,7 +308,6 @@
       owner: root
       group: root
       mode: '0644'
-      force: no
 
   - name: Install necessary Python libraries from PyPI
     pip:
