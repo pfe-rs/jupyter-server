@@ -8,6 +8,30 @@
 
   tasks:
 
+  - name: Allow SSH, HTTP and HTTPS connections
+    ansible.builtin.iptables:
+      chain: INPUT
+      protocol: tcp
+      in_interface: eth0
+      destination_ports:
+        - "22"
+        - "80"
+        - "443"
+      jump: ACCEPT
+
+  - name: Allow related and established connections
+    ansible.builtin.iptables:
+      chain: INPUT
+      in_interface: eth0
+      ctstate: ESTABLISHED,RELATED
+      jump: ACCEPT
+
+  - name: Drop all unwanted inbound traffic
+    ansible.builtin.iptables:
+      chain: INPUT
+      in_interface: eth0
+      jump: DROP
+
   - name: Add admin public SSH keys
     ansible.builtin.template:
       src: keys/authorized_keys
@@ -83,7 +107,7 @@
   - name: Configure Let's Encrypt certificate
     ansible.builtin.command:
       cmd: certbot --nginx --redirect -d jupyter.pfe.rs -d dashboard.pfe.rs --non-interactive --agree-tos -m admin@pfe.rs
-      creates: /etc/letsencrypt/live/jupyter.pfe.rs/privkey.pem
+      # creates: /etc/letsencrypt/live/jupyter.pfe.rs/privkey.pem
 
   - name: Reload Nginx
     ansible.builtin.systemd:
@@ -144,9 +168,14 @@
       build:
         path: /srv/testbench
         args:
-          listen_port: 8002
           restart: always
       source: build
+
+  - name: Restrict container inbound connections
+    ansible.builtin.iptables:
+      chain: DOCKER-USER
+      in_interface: eth0
+      jump: DROP
 
   - name: Start Dashboard container
     community.docker.docker_container:
