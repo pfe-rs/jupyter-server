@@ -318,6 +318,18 @@
       path: /tmp/jupyter-requirements.txt
       state: absent
 
+  - name: Install downloader dependencies
+    ansible.builtin.package:
+      name: 
+      - curl
+      - unzip
+      state: latest
+
+  - name: Download remote zip datasets
+    ansible.builtin.command:
+      cmd: /srv/testbench/downloader.sh
+      chdir: /srv/testbench
+
   - name: Symlink dataset
     ansible.builtin.file:
       src: /srv/testbench/datasets
