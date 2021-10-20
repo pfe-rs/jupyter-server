@@ -257,3 +257,38 @@
       system: yes
       comment: "{{ item.name }}"
     with_items: "{{ users_json }}"
+
+  - name: Install necessary Python libraries from Aptitude
+    ansible.builtin.package:
+      name:
+      - libopencv-dev
+      - python3-opencv
+      state: latest
+
+  - name: Copy requirements.txt temporarily for Jupyter configuration
+    ansible.builtin.template:
+      src: config/jupyter/requirements.txt
+      dest: /tmp/jupyter-requirements.txt
+      owner: root
+      group: root
+      mode: '0644'
+      force: no
+
+  - name: Install necessary Python libraries from PyPI
+    pip:
+      executable: pip3
+      requirements: /tmp/jupyter-requirements.txt
+
+  - name: Clean up temporary requirements.txt
+    ansible.builtin.file:
+      path: /tmp/jupyter-requirements.txt
+      state: absent
+
+  - name: Symlink dataset
+    ansible.builtin.file:
+      src: /srv/testbench/datasets
+      dest: "/home/{{ item.username }}/dataset"
+      owner: root
+      group: root
+      state: link
+    with_items: "{{ users_json }}"
