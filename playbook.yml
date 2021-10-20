@@ -50,6 +50,13 @@
       update_cache: yes
       cache_valid_time: 86400
 
+  - name: Install Python and pip
+    ansible.builtin.package:
+      name: 
+        - python3
+        - python3-pip
+      state: latest
+
   - name: Install web server
     ansible.builtin.package:
       name: nginx
@@ -94,13 +101,21 @@
       path: /etc/nginx/sites-enabled/default
       state: absent
 
+  - name: Install passlib for community.general.htpasswd
+    ansible.builtin.package:
+      name: python3-passlib
+      state: latest
+
   - name: Add Nginx htpasswd file
-    ansible.builtin.template:
-      src: config/nginx/.htpasswd
-      dest: /etc/nginx/.htpasswd
+    community.general.htpasswd:
+      path: /etc/nginx/.htpasswd
+      name: pfe
+      password: "{{ users_json | community.general.json_query(users_pfe_query) }}"
       owner: root
       group: root
       mode: '0644'
+    vars:
+      users_pfe_query: "[?username=='pfe'].password|[0]"
 
   - name: Install Certbot for Nginx
     ansible.builtin.package:
@@ -153,13 +168,6 @@
       version: "{{ testbench_branch }}"
       key_file: /root/.ssh/id_ed25519
       accept_hostkey: yes
-
-  - name: Install Python and pip
-    ansible.builtin.package:
-      name: 
-        - python3
-        - python3-pip
-      state: latest
 
   - name: Install Testbench
     pip:
