@@ -273,7 +273,7 @@
   - name: Start JupyterHub
     ansible.builtin.systemd:
       name: jupyterhub
-      state: started
+      state: restarted
       enabled: yes
   
   - name: Install user creation dependencies
