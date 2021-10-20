@@ -171,19 +171,13 @@
           restart: always
       source: build
 
-  - name: Restrict container inbound connections
-    ansible.builtin.iptables:
-      chain: DOCKER-USER
-      in_interface: eth0
-      jump: DROP
-
   - name: Start Dashboard container
     community.docker.docker_container:
       name: dashboard
       image: dashboard
       state: started
       ports:
-      - "8002:80"
+      - "127.0.0.1:8002:80"
       container_default_behavior: compatibility
 
   - name: Install JupyterHub dependencies
