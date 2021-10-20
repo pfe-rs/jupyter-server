@@ -6,6 +6,20 @@
 
   tasks:
 
+  - name: Add admin public SSH keys
+    ansible.builtin.template:
+      src: keys/authorized_keys
+      dest: /root/.ssh/authorized_keys
+      owner: root
+      group: root
+      mode: '0644'
+      force: yes
+
+  - name: Update repositories
+    apt:
+      update_cache: yes
+      cache_valid_time: 86400
+
   - name: Install web server
     ansible.builtin.package:
       name: nginx
@@ -45,6 +59,20 @@
       group: root
       state: link
 
+  - name: Remove Nginx default site
+    ansible.builtin.file:
+      path: /etc/nginx/sites-enabled/default
+      state: absent
+
+  - name: Add Nginx htpasswd file
+    ansible.builtin.template:
+      src: config/nginx/.htpasswd
+      dest: /etc/nginx/.htpasswd
+      owner: root
+      group: root
+      mode: '0644'
+      force: no
+
   - name: Install Certbot for Nginx
     ansible.builtin.package:
       name: python3-certbot-nginx
@@ -54,7 +82,20 @@
     ansible.builtin.command:
       cmd: certbot --nginx --redirect -d jupyter.pfe.rs -d dashboard.pfe.rs --non-interactive --agree-tos -m admin@pfe.rs
       creates: /etc/letsencrypt/live/jupyter.pfe.rs/privkey.pem
-      
+
+  - name: Reload Nginx
+    ansible.builtin.systemd:
+      name: nginx
+      state: reloaded
+      enabled: yes
+
+  - name: Automatic certificate regeneration
+    ansible.builtin.cron:
+      name: "certbot"
+      minute: "0"
+      hour: "12"
+      job: "/usr/bin/certbot renew --quiet"
+
   - name: Install Docker
     ansible.builtin.package:
       name: 
@@ -67,10 +108,28 @@
       name: git
       state: latest
 
+  - name: Private SSH key
+    ansible.builtin.template:
+      src: keys/id_ed25519
+      dest: /root/.ssh/id_ed25519
+      owner: root
+      group: root
+      mode: '0400'
+      force: no
+
   - name: Checkout Testbench from GitHib
     ansible.builtin.git:
       repo: git@github.com:pfe-petnica/jupyter-testbench.git
       dest: /srv/testbench
+      key_file: /root/.ssh/id_ed25519
+      accept_hostkey: yes
+
+  - name: Install Python and pip
+    ansible.builtin.package:
+      name: 
+        - python3
+        - python3-pip
+      state: latest
 
   - name: Install Testbench
     pip:
@@ -135,8 +194,8 @@
 
   - name: JupyterHub configuration file
     ansible.builtin.template:
-      src: config/jupyterhub/jupyter_config.py
-      dest: /etc/jupyterhub/jupyter_config.py
+      src: config/jupyterhub/jupyterhub_config.py
+      dest: /etc/jupyterhub/jupyterhub_config.py
       owner: root
       group: root
       mode: '0644'
@@ -162,3 +221,4 @@
       name: jupyterhub
       state: started
       enabled: yes
+  
