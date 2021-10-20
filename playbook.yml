@@ -112,7 +112,7 @@
   - name: Configure Let's Encrypt certificate
     ansible.builtin.command:
       cmd: certbot --nginx --redirect -d jupyter.pfe.rs -d dashboard.pfe.rs --non-interactive --agree-tos -m admin@pfe.rs
-      # creates: /etc/letsencrypt/live/jupyter.pfe.rs/privkey.pem
+      creates: /etc/letsencrypt/live/jupyter.pfe.rs/privkey.pem
 
   - name: Reload Nginx
     ansible.builtin.systemd:
@@ -161,6 +161,7 @@
     ansible.builtin.package:
       name: 
         - python3
+        - python-is-python3
         - python3-pip
       state: latest
 
@@ -177,12 +178,15 @@
         args:
           restart: always
       source: build
+      force_source: yes
 
   - name: Start Dashboard container
     community.docker.docker_container:
       name: dashboard
       image: dashboard
       state: started
+      restart: yes
+      restart_policy: always
       ports:
       - "127.0.0.1:8002:80"
       container_default_behavior: compatibility
