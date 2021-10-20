@@ -6,6 +6,30 @@
 
   tasks:
 
+  - name: Allow SSH, HTTP and HTTPS connections
+    ansible.builtin.iptables:
+      chain: INPUT
+      protocol: tcp
+      in_interface: eth0
+      destination_ports:
+        - "22"
+        - "80"
+        - "443"
+      jump: ACCEPT
+
+  - name: Allow related and established connections
+    ansible.builtin.iptables:
+      chain: INPUT
+      in_interface: eth0
+      ctstate: ESTABLISHED,RELATED
+      jump: ACCEPT
+
+  - name: Drop all unwanted inbound traffic
+    ansible.builtin.iptables:
+      chain: INPUT
+      in_interface: eth0
+      jump: DROP
+
   - name: Add admin public SSH keys
     ansible.builtin.template:
       src: keys/authorized_keys
@@ -102,6 +126,12 @@
         - docker.io
         - python3-docker
       state: latest
+
+  - name: Restrict container inbound connections
+    ansible.builtin.iptables:
+      chain: DOCKER-USER
+      in_interface: eth0
+      jump: DROP
 
   - name: Install Git
     ansible.builtin.package:
