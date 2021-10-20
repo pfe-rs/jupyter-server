@@ -161,7 +161,6 @@
     ansible.builtin.package:
       name: 
         - python3
-        - python-is-python3
         - python3-pip
       state: latest
 
@@ -263,7 +262,7 @@
       comment: "{{ item.name }}"
     with_items: "{{ users_json }}"
 
-  - name: Install necessary Python libraries from Aptitude
+  - name: Install necessary Python libraries
     ansible.builtin.package:
       name:
       - libopencv-dev
@@ -296,6 +295,16 @@
       owner: root
       group: root
       state: link
+    with_items: "{{ users_json }}"
+
+  - name: Copy shared notebooks
+    ansible.builtin.copy:
+      src: /srv/testbench/notebooks/
+      dest: "/home/{{ item.username }}"
+      owner: "{{ item.username }}"
+      group: users
+      mode: '0750'
+      remote_src: yes
     with_items: "{{ users_json }}"
 
   - name: Copy dashboard.json
