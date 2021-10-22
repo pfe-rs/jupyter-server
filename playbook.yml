@@ -348,6 +348,15 @@
       state: link
     with_items: "{{ users_json }}"
 
+  - name: Symlink datasets
+    ansible.builtin.file:
+      src: /srv/testbench/datasets
+      dest: "/home/{{ item.username }}/datasets"
+      owner: root
+      group: root
+      state: link
+    with_items: "{{ users_json }}"
+
   - name: Copy shared notebooks
     ansible.builtin.copy:
       src: /srv/testbench/notebooks/
