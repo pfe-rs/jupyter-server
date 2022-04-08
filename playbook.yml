@@ -162,7 +162,7 @@
 
   - name: Checkout Testbench from GitHib
     ansible.builtin.git:
-      repo: git@github.com:pfe-petnica/jupyter-testbench.git
+      repo: git@github.com:pfe-rs/jupyter-testbench.git
       dest: /srv/testbench
       single_branch: yes
       version: "{{ testbench_branch }}"
