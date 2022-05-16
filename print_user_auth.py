@@ -2,9 +2,12 @@
 
 import json
 
+from os.path import isfile
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen.canvas import Canvas
-
+from urllib.request import urlretrieve
 
 with open('./users.json') as f:
     data = json.load(f)
@@ -16,9 +19,14 @@ margin = 25
 padding = 45
 font_size = 13
 
+# Register font for users
+if not isfile('users.ttf'):
+    urlretrieve('https://pfe.rs/fonts/titillium/titillium-web-v10-latin-ext_latin-300.ttf', 'users.ttf')
+pdfmetrics.registerFont(TTFont('PFE', 'users.ttf'))
+
 i = 0
 for user in data:
-    c.setFont('Courier', font_size)
+    c.setFont('PFE', font_size)
     line_y = h - margin - font_size * (i + 1) - padding * i
     c.drawString(margin, line_y, user['name'])
     c.drawString(w / 3, line_y, 'user: ' + user['username'])
