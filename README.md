@@ -39,23 +39,22 @@ Nakon toga se u zavisnosti od tipa radionice pokreće:
 
 Repozitorijum za radionicu treba da bude struktuiran na sledeći način:
 - `notebooks/`: sveske koje treba da se kopiraju u radni direktorijum svakog korisnika
-- `dataset/`: svi podaci sa kojima korisnici treba da interaguju
-- `packages/`: biblioteke napravljene za potrebe radionice (npr. [SauLib](https://github.com/pfe-rs/sau-radionica/tree/master/SauLib))
+- `dataset/`: svi podaci sa kojima korisnici treba da interaguju, imutabilno se linkuje u radni direktorijum svakog korisnika
+- `packages/`: biblioteke napravljene za potrebe radionice (npr. [SauLib](https://github.com/pfe-rs/sau-radionica/tree/master/SauLib)) koje korisnici mogu da importuju
 - `LICENSE`: licenca pod kojom je kod objavljen, poželjno [MIT](https://mit-license.org/)
 - `requirements.txt`: lista Python paketa (sa fiksiranom [minor](https://semver.org/#summary) verzijom) koji su neophodni za izvršavanje koda u sveskama
 
 ```
 ├─ dataset/
-│   ├─ signal_za_obradu.wav
-│   ├─ podaci_za_treniranje.csv
-│   └─ slika_za_obradu.png
+│  ├─ signal_za_obradu.wav
+│  ├─ podaci_za_treniranje.csv
+│  └─ slika_za_obradu.png
 ├─ notebooks/
-│   └─ Primer sveske.ipynb
+│  └─ Primer sveske.ipynb
 ├─ packages
-│   └─ biblioteka
-│       ├─ __init__.py
-│       └─ setup.py
+│  └─ biblioteka
+│     ├─ __init__.py
+│     └─ setup.py
 ├─ LICENSE
 └─ requirements.txt
 ```
-
