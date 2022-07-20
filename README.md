@@ -52,9 +52,9 @@ Repozitorijum za radionicu treba da bude struktuiran na sledeći način:
 ├─ notebooks/
 │  └─ Primer sveske.ipynb
 ├─ packages
+│  ├─ setup.py
 │  └─ biblioteka
-│     ├─ __init__.py
-│     └─ setup.py
+│     └─ __init__.py
 ├─ LICENSE
 └─ requirements.txt
 ```

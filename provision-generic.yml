@@ -36,20 +36,11 @@
         executable: pip3
         requirements: "/srv/classrooms/{{ git_repo }}/requirements.txt"
 
-    - name: Get list of custom packages
-      ansible.builtin.find:
-        paths: "/srv/classrooms/{{ git_repo }}/packages"
-        patterns: "*"
-        recurse: no
-        file_type: directory
-      register: custom_pkgs
-
     - name: Install custom packages
       pip:
         executable: pip3
         name: "."
-        chdir: "{{ item }}"
-      with_items: "{{ custom_pkgs.files | map(attribute='path') }}"
+        chdir: "/srv/classrooms/{{ git_repo }}/packages"
 
     - name: Symlink dataset
       ansible.builtin.file:
