@@ -1,0 +1,71 @@
+---
+- name: Setup Jupyter generic classroom
+  hosts: hosts
+  vars:
+    users_json: "{{ lookup('file', 'users.json') | from_json }}"
+  vars_prompt:
+    - name: git_repo
+      prompt: Classroom git repository
+      default: "dos-radionica" # null
+      private: no
+    - name: git_branch
+      prompt: Checkout branch
+      default: "master"
+      private: no
+  remote_user: root
+
+  tasks:
+    - name: Install Git
+      ansible.builtin.package:
+        name: git
+        state: latest
+
+    - name: Checkout classroom repo from GitHub
+      ansible.builtin.git:
+        repo: "git@github.com:pfe-rs/{{ git_repo }}.git"
+        dest: "/srv/classrooms/{{ git_repo }}"
+        single_branch: yes
+        depth: 1
+        version: "{{ git_branch }}"
+        key_file: /root/.ssh/id_ed25519
+        accept_hostkey: yes
+        force: yes
+
+    - name: Install required Python packages
+      pip:
+        executable: pip3
+        requirements: "/srv/classrooms/{{ git_repo }}/requirements.txt"
+
+    - name: Get list of custom packages
+      ansible.builtin.find:
+        paths: "/srv/classrooms/{{ git_repo }}/packages"
+        patterns: "*"
+        recurse: no
+        file_type: directory
+      register: custom_pkgs
+
+    - name: Install custom packages
+      pip:
+        executable: pip3
+        name: "."
+        chdir: "{{ item }}"
+      with_items: "{{ custom_pkgs.files | map(attribute='path') }}"
+
+    - name: Symlink dataset
+      ansible.builtin.file:
+        src: "/srv/classrooms/{{ git_repo }}/dataset"
+        dest: "/home/{{ item.username }}/dataset"
+        owner: root
+        group: root
+        state: link
+      with_items: "{{ users_json }}"
+
+    - name: Copy shared notebooks
+      ansible.builtin.copy:
+        src: "/srv/classrooms/{{ git_repo }}/notebooks/"
+        dest: "/home/{{ item.username }}"
+        owner: "{{ item.username }}"
+        group: users
+        mode: "0750"
+        remote_src: yes
+      with_items: "{{ users_json }}"
