@@ -1,0 +1,225 @@
+---
+- name: Setup JupyterHub multi-user server
+  hosts: hosts
+  vars:
+    users_json: "{{ lookup('file', 'users.json') | from_json }}"
+  vars_prompt:
+    - name: host_domain
+      prompt: Server's (sub)domain
+      default: "py.pfe.rs"
+      private: no
+  remote_user: root
+
+  tasks:
+    - name: Allow SSH, HTTP and HTTPS connections
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        in_interface: eth0
+        destination_ports:
+          - "22"
+          - "80"
+          - "443"
+        jump: ACCEPT
+
+    - name: Allow related and established connections
+      ansible.builtin.iptables:
+        chain: INPUT
+        in_interface: eth0
+        ctstate: ESTABLISHED,RELATED
+        jump: ACCEPT
+
+    - name: Drop all unwanted inbound traffic
+      ansible.builtin.iptables:
+        chain: INPUT
+        in_interface: eth0
+        jump: DROP
+
+    - name: Add admin public SSH keys
+      ansible.builtin.template:
+        src: keys/authorized_keys
+        dest: /root/.ssh/authorized_keys
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Update repositories
+      apt:
+        update_cache: yes
+        cache_valid_time: 86400
+
+    - name: Install Python and pip
+      ansible.builtin.package:
+        name:
+          - python3
+          - python3-pip
+        state: latest
+
+    - name: Install web server
+      ansible.builtin.package:
+        name: nginx
+        state: latest
+
+    - name: Nginx JupyterHub site configuration
+      ansible.builtin.template:
+        src: config/nginx/jupyterhub.j2
+        dest: /etc/nginx/sites-available/jupyter.conf
+        owner: root
+        group: root
+        mode: "0644"
+        force: no
+
+    - name: Nginx JupyterHub site activation
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/jupyter.conf
+        dest: /etc/nginx/sites-enabled/jupyter.conf
+        owner: root
+        group: root
+        state: link
+
+    - name: Remove Nginx default site
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Install Certbot for Nginx
+      ansible.builtin.package:
+        name: python3-certbot-nginx
+        state: latest
+
+    - name: Configure Let's Encrypt certificate
+      ansible.builtin.command:
+        cmd: "certbot --nginx --redirect -d {{ host_domain }} --non-interactive --agree-tos -m admin@pfe.rs"
+        creates: "/etc/letsencrypt/live/{{ host_domain }}/privkey.pem"
+
+    - name: Reload Nginx
+      ansible.builtin.systemd:
+        name: nginx
+        state: reloaded
+        enabled: yes
+
+    - name: Automatic certificate regeneration
+      ansible.builtin.cron:
+        name: "certbot"
+        minute: "0"
+        hour: "12"
+        job: "/usr/bin/certbot renew --quiet"
+
+    - name: Private SSH key
+      ansible.builtin.template:
+        src: keys/id_ed25519
+        dest: /root/.ssh/id_ed25519
+        owner: root
+        group: root
+        mode: "0400"
+
+    - name: Copy users.json
+      ansible.builtin.template:
+        src: users.json
+        dest: /etc/users.json
+        owner: root
+        group: root
+        mode: "0640"
+
+    - name: Install JupyterHub dependencies
+      ansible.builtin.package:
+        name:
+          - npm
+          - nodejs
+          - python3-pip
+        state: latest
+
+    - name: Install JupyterHub
+      pip:
+        executable: pip3
+        name:
+          - jupyterhub
+          - notebook
+
+    - name: Install configurable-http-proxy
+      community.general.npm:
+        name: configurable-http-proxy
+        global: yes
+
+    - name: Create JupyterHub root directory
+      ansible.builtin.file:
+        path: /srv/jupyterhub
+        state: directory
+        mode: "0755"
+
+    - name: Create JupyterHub configuration directory
+      ansible.builtin.file:
+        path: /etc/jupyterhub
+        state: directory
+        mode: "0755"
+
+    - name: JupyterHub configuration file
+      ansible.builtin.template:
+        src: config/jupyterhub/jupyterhub_config.py
+        dest: /etc/jupyterhub/jupyterhub_config.py
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: JupyterHub logs directory
+      ansible.builtin.file:
+        path: /var/log/jupyterhub
+        state: directory
+        mode: "0755"
+
+    - name: JupyterHub system service file
+      ansible.builtin.template:
+        src: config/systemd/jupyterhub.service
+        dest: /etc/systemd/system/jupyterhub.service
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Start JupyterHub
+      ansible.builtin.systemd:
+        name: jupyterhub
+        state: restarted
+        enabled: yes
+
+    - name: Install user creation dependencies
+      ansible.builtin.package:
+        name:
+          - jq
+        state: latest
+
+    - name: Create users
+      ansible.builtin.user:
+        home: "/home/{{ item.username }}"
+        name: "{{ item.username }}"
+        password: "{{ item.password | password_hash('sha512') }}"
+        shell: /sbin/nologin
+        system: yes
+        comment: "{{ item.name }}"
+      with_items: "{{ users_json }}"
+
+    - name: Install necessary Python libraries
+      ansible.builtin.package:
+        name:
+          - texlive-latex-extra
+          - texlive-fonts-recommended
+          - dvipng
+          - cm-super
+        state: latest
+
+    - name: Copy requirements.txt temporarily for Jupyter configuration
+      ansible.builtin.template:
+        src: config/jupyter/requirements.txt
+        dest: /tmp/jupyter-requirements.txt
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Install necessary Python libraries from PyPI
+      pip:
+        executable: pip3
+        requirements: /tmp/jupyter-requirements.txt
+
+    - name: Clean up temporary requirements.txt
+      ansible.builtin.file:
+        path: /tmp/jupyter-requirements.txt
+        state: absent

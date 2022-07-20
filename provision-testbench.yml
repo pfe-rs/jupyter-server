@@ -1,0 +1,164 @@
+---
+- name: Setup Jupyter Testbench Classroom
+  hosts: hosts
+  vars:
+    users_json: "{{ lookup('file', 'users.json') | from_json }}"
+  vars_prompt:
+    - name: host_domain
+      prompt: Dashboards's (sub)domain
+      default: "dash.pfe.rs"
+      private: no
+    - name: testbench_branch
+      prompt: Testbench repository branch
+      default: "master"
+      private: no
+  remote_user: root
+
+  tasks:
+    - name: Nginx Dashboard site configuration
+      ansible.builtin.template:
+        src: config/nginx/dashboard.j2
+        dest: /etc/nginx/sites-available/dashboard.conf
+        owner: root
+        group: root
+        mode: "0644"
+        force: no
+
+    - name: Nginx Dashboard site activation
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/dashboard.conf
+        dest: /etc/nginx/sites-enabled/dashboard.conf
+        owner: root
+        group: root
+        state: link
+
+    - name: Install passlib for community.general.htpasswd
+      ansible.builtin.package:
+        name: python3-passlib
+        state: latest
+
+    - name: Add Nginx htpasswd file
+      community.general.htpasswd:
+        path: /etc/nginx/.htpasswd
+        name: pfe
+        password: "{{ users_json | community.general.json_query(users_pfe_query) }}"
+        owner: root
+        group: root
+        mode: "0644"
+      vars:
+        users_pfe_query: "[?username=='pfe'].password|[0]"
+
+    - name: Configure Let's Encrypt certificate
+      ansible.builtin.command:
+        cmd: "certbot --nginx --redirect -d {{ host_domain }} --non-interactive --agree-tos -m admin@pfe.rs"
+        creates: "/etc/letsencrypt/live/{{ host_domain }}/privkey.pem"
+
+    - name: Reload Nginx
+      ansible.builtin.systemd:
+        name: nginx
+        state: reloaded
+        enabled: yes
+
+    - name: Automatic certificate regeneration
+      ansible.builtin.cron:
+        name: "certbot"
+        minute: "0"
+        hour: "12"
+        job: "/usr/bin/certbot renew --quiet"
+
+    - name: Install Docker
+      ansible.builtin.package:
+        name:
+          - docker.io
+          - python3-docker
+        state: latest
+
+    - name: Install Git
+      ansible.builtin.package:
+        name: git
+        state: latest
+
+    - name: Checkout Testbench from GitHib
+      ansible.builtin.git:
+        repo: git@github.com:pfe-rs/jupyter-testbench.git
+        dest: /srv/testbench
+        single_branch: yes
+        version: "{{ testbench_branch }}"
+        key_file: /root/.ssh/id_ed25519
+        accept_hostkey: yes
+
+    - name: Install Testbench
+      pip:
+        executable: pip3
+        name: /srv/testbench
+
+    - name: Copy dashboard.json
+      ansible.builtin.template:
+        src: config/testbench/dashboard.json
+        dest: /etc/dashboard.json
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Copy testbench.json
+      ansible.builtin.template:
+        src: config/testbench/testbench.json
+        dest: /etc/testbench.json
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Build Dashboard container
+      community.docker.docker_image:
+        name: dashboard
+        build:
+          path: /srv/testbench
+        source: build
+        force_source: yes
+
+    - name: Start Dashboard container
+      community.docker.docker_container:
+        name: dashboard
+        image: dashboard
+        state: started
+        restart: yes
+        restart_policy: unless-stopped
+        ports:
+          - "127.0.0.1:8002:80"
+        mounts:
+          - source: /etc/users.json
+            target: /etc/users.json
+            read_only: yes
+            type: bind
+        container_default_behavior: compatibility
+
+    - name: Install downloader dependencies
+      ansible.builtin.package:
+        name:
+          - curl
+          - unzip
+        state: latest
+
+    - name: Download remote zip datasets
+      ansible.builtin.command:
+        cmd: /srv/testbench/downloader.sh
+        chdir: /srv/testbench
+
+    - name: Symlink dataset
+      ansible.builtin.file:
+        src: /srv/testbench/datasets
+        dest: "/home/{{ item.username }}/dataset"
+        owner: root
+        group: root
+        state: link
+      with_items: "{{ users_json }}"
+
+    - name: Copy shared notebooks
+      ansible.builtin.copy:
+        src: /srv/testbench/notebooks/
+        dest: "/home/{{ item.username }}"
+        owner: "{{ item.username }}"
+        group: users
+        mode: "0750"
+        remote_src: yes
+      with_items: "{{ users_json }}"
