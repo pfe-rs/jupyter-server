@@ -1,5 +1,5 @@
 ---
-- name: Setup Jupyter Testbench Classroom
+- name: Setup Jupyter Testbench classroom
   hosts: hosts
   vars:
     users_json: "{{ lookup('file', 'users.json') | from_json }}"
@@ -78,14 +78,21 @@
         name: git
         state: latest
 
-    - name: Checkout Testbench from GitHib
+    - name: Checkout Testbench from GitHub
       ansible.builtin.git:
         repo: git@github.com:pfe-rs/jupyter-testbench.git
         dest: /srv/testbench
         single_branch: yes
+        depth: 1
         version: "{{ testbench_branch }}"
         key_file: /root/.ssh/id_ed25519
         accept_hostkey: yes
+        force: yes
+
+    - name: Install required Python packages
+      pip:
+        executable: pip3
+        requirements: "/srv/testbench/requirements.txt"
 
     - name: Install Testbench
       pip:
