@@ -175,28 +175,6 @@
         group: root
         mode: "0644"
 
-    - name: Start JupyterHub
-      ansible.builtin.systemd:
-        name: jupyterhub
-        state: restarted
-        enabled: yes
-
-    - name: Install user creation dependencies
-      ansible.builtin.package:
-        name:
-          - jq
-        state: latest
-
-    - name: Create users
-      ansible.builtin.user:
-        home: "/home/{{ item.username }}"
-        name: "{{ item.username }}"
-        password: "{{ item.password | password_hash('sha512') }}"
-        shell: /sbin/nologin
-        system: yes
-        comment: "{{ item.name }}"
-      with_items: "{{ users_json }}"
-
     - name: Install necessary Python libraries
       ansible.builtin.package:
         name:
@@ -223,3 +201,25 @@
       ansible.builtin.file:
         path: /tmp/jupyter-requirements.txt
         state: absent
+
+    - name: Start JupyterHub
+      ansible.builtin.systemd:
+        name: jupyterhub
+        state: restarted
+        enabled: yes
+
+    - name: Install user creation dependencies
+      ansible.builtin.package:
+        name:
+          - jq
+        state: latest
+
+    - name: Create users
+      ansible.builtin.user:
+        home: "/home/{{ item.username }}"
+        name: "{{ item.username }}"
+        password: "{{ item.password | password_hash('sha512') }}"
+        shell: /sbin/nologin
+        system: yes
+        comment: "{{ item.name }}"
+      with_items: "{{ users_json }}"
