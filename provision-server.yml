@@ -2,7 +2,7 @@
 - name: Setup JupyterHub multi-user server
   hosts: hosts
   vars:
-    users_json: "{{ lookup('file', 'users.json') | from_json }}"
+    users_json: "{{ lookup('file', 'users/users.json') | from_json }}"
   vars_prompt:
     - name: host_domain
       prompt: Server's (sub)domain
