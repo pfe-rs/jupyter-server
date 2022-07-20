@@ -1,6 +1,6 @@
 server {
 
-    server_name dashboard.pfe.rs;
+    server_name {{ host_domain }};
 
     location / {
         proxy_pass http://127.0.0.1:8002;
