@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 from json import dump, load
 from os.path import isfile
-from random import randint
+from random import randint, choice
 from typing import Optional
+from string import ascii_lowercase, digits
+
 
 def get_username(name: str) -> str:
     name = name.lower()
@@ -14,6 +16,7 @@ def get_username(name: str) -> str:
     name = name.replace('š', 's')
     name = name.replace('đ', 'dj')
     return name
+
 
 users: Optional[list[dict[str, str]]] = None
 
@@ -32,7 +35,7 @@ if users is not None:
             users.append({
                 'name': name,
                 'username': get_username(name),
-                'password': str(randint(1000000000, 9999999999))
+                'password': ''.join(choice(ascii_lowercase + digits) for _ in range(8))
             })
         except KeyboardInterrupt:
             break
