@@ -8,9 +8,27 @@ U direktorijum `keys/` potrebno je da se nalaze dva fajla:
 - `id_ed25519` sa ključem koji je postavljen kao [deploy key](https://docs.github.com/en/developers/overview/managing-deploy-keys#deploy-keys) i koji se koristi za kloniranje privatnih Git repozitorijuma sa PFE organizacije.
 
 ## Korisnici
-Napravite fajl pod nazivom `users.txt` i u njega stavite imena i prezimena svih polaznika, neošišanom latinicom. Zatim pokrenite `python users.py < users.txt` kako biste generisali `users.json` fajl sa njihovim imenima, prezimenima, korisničkim imenima i lozinkama koji se koristi za pravljenje njihovih naloga na serveru, kao i za prikazivanje punih imena u rezultatima na tabli.
+U direktorijumu `users` napravite fajl pod nazivom `users.txt` i u njega stavite imena i prezimena svih polaznika, neošišanom latinicom. Zatim pokrenite `python users.py < users.txt` iz tog direktorijuma kako biste generisali `users.json` fajl sa njihovim imenima, prezimenima, korisničkim imenima i lozinkama koji se koristi za pravljenje njihovih naloga na serveru, kao i za prikazivanje punih imena u rezultatima na tabli.
 
 Nakon generisanja dodajte korisnika `pfe` u `users.json` ručno. On će služiti kao administrator JupyterHub instance, i lozinka za tog korisnika će takođe biti lozinka za tablu sa rezultatima testova.
+
+### Distribucija lozinki
+Postoje dva automatizovana načina da se polaznicima podele njihove JupyterHub lozinke: štampanjem na papiru ili preko Discord.
+
+#### Štampanje kredencijala
+Potrebno je u `users` direktorijumu pokrenuti `print_user_auth.py` skriptu, ona će izgenerisati `users.pdf` fajl koji je onda moguće odštampati i iseći kako bi se polaznicima podelili kredencijali.
+
+#### Discord
+Potrebno je napraviti `autodetection.json` fajl u `users` direktorijumu sa sledećom šemom:
+```json
+{
+    "token": "",                    // Discord bot token
+    "guild_id": 0,                  // ID PFE Discord servera
+    "role_id": 0,                   // ID uloge u kojoj su polaznici za koje se organizuje kamp
+    "message": "Kredencijali za JupyterHub su sledeći:\nKorisničko ime: `{username}`\nLozinka: `{password}`"
+}
+```
+Nakon toga pokrenuti `users.py` opet (ili po prvi put) i on će pokušati da automatski detektuje koji nalog pripada kojem polazniku. Ukoliko za nekog polaznika ne uspe, proveriti da li je dobro postavljen nadimak na Discord ili ručno dodati u `users.json` kao `discord_id` polje sa Discord identifikatorom polaznika. Kad je to spremno, pokrenuti `send_user_auth.py` kako bi se polaznicima poslali kredencijali preko Discord DM.
 
 ## Konfiguracija
 Glavni deo servera podešava se kroz [Ansible](https://www.ansible.com/). Nakon što ste podesili parametre iznad, u `hosts.ini` podesite adresu servera koji podešavate i pokrenite:
