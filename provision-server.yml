@@ -115,7 +115,7 @@
 
     - name: Copy users.json
       ansible.builtin.template:
-        src: users.json
+        src: users/users.json
         dest: /etc/users.json
         owner: root
         group: root

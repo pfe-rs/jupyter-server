@@ -89,11 +89,6 @@
         accept_hostkey: yes
         force: yes
 
-    - name: Install required Python packages
-      pip:
-        executable: pip3
-        requirements: "/srv/testbench/requirements.txt"
-
     - name: Install Testbench
       pip:
         executable: pip3
@@ -139,6 +134,15 @@
             type: bind
         container_default_behavior: compatibility
 
+    - name: Get list of JupyterHub system dependencies
+      ansible.builtin.command: cat /srv/testbench/requirements.system.txt
+      register: system_deps
+
+    - name: Install JupyterHub system dependencies
+      ansible.builtin.package:
+        name: "{{ system_deps.stdout_lines | list }}"
+        state: latest
+
     - name: Install downloader dependencies
       ansible.builtin.package:
         name:
@@ -159,6 +163,11 @@
         group: root
         state: link
       with_items: "{{ users_json }}"
+
+    - name: Remove remote datasets list file
+      ansible.builtin.file:
+        path: /srv/testbench/datasets/download.txt
+        state: absent
 
     - name: Copy shared notebooks
       ansible.builtin.copy:

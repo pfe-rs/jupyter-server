@@ -6,7 +6,7 @@
   vars_prompt:
     - name: git_repo
       prompt: Classroom git repository
-      default: "dos-radionica" # null
+      default: null
       private: no
     - name: git_branch
       prompt: Checkout branch
