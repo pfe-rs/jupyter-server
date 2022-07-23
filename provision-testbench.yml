@@ -158,7 +158,7 @@
     - name: Symlink dataset
       ansible.builtin.file:
         src: /srv/testbench/datasets
-        dest: "/home/{{ item.username }}/dataset"
+        dest: "/home/{{ item.username }}/datasets"
         owner: root
         group: root
         state: link
