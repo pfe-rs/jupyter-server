@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from discord import Client, Intents
 from json import load
 from time import sleep
