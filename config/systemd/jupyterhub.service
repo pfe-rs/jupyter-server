@@ -9,6 +9,8 @@ ExecStart=/usr/local/bin/jupyterhub -f /etc/jupyterhub/jupyterhub_config.py
 StandardError=append:/var/log/jupyterhub/err.log
 StandardOutput=append:/var/log/jupyterhub/out.log
 WorkingDirectory=/srv/jupyterhub
+Restart=on-failure
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
