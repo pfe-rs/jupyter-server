@@ -120,9 +120,10 @@ if isfile('autodetection.json'):
         autodetection_config = load(autodetection_config_file)
 
 if users is not None:
-    while True:
-        try:
-            name: str = input()
+    with open('users.txt', 'r') as user_list:
+        for user in user_list.read().splitlines():
+            print(user)
+            name: str = user
             if len(name) == 0 or any(user['name'] == name for user in users):
                 continue
             users.append({
@@ -130,10 +131,6 @@ if users is not None:
                 'username': get_username(name),
                 'password': ''.join(choice(ascii_lowercase + digits) for _ in range(8))
             })
-        except KeyboardInterrupt:
-            break
-        except EOFError:
-            break
     if autodetection_config is not None:
         autodetection.run(autodetection_config['token'])
     with open('users.json', 'w', encoding='utf-8') as users_file:
