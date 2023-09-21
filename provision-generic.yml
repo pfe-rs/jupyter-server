@@ -31,16 +31,40 @@
         accept_hostkey: yes
         force: yes
 
+    - name: Check for Python packages
+      stat:
+        path: "/srv/classrooms/{{ git_repo }}/requirements.txt"
+      register: repository_python_packages
+
     - name: Install required Python packages
       pip:
         executable: pip3
         requirements: "/srv/classrooms/{{ git_repo }}/requirements.txt"
+      when: repository_python_packages
 
-    - name: Install custom packages
-      pip:
-        executable: pip3
-        name: "."
-        chdir: "/srv/classrooms/{{ git_repo }}/packages"
+    - name: Check for system packages
+      stat:
+        path: "/srv/classrooms/{{ git_repo }}/packages"
+      register: repository_system_packages
+
+    - name: List system packages
+      shell: cat "/srv/classrooms/{{ git_repo }}/packages"
+      register: system_packages
+      when: repository_system_packages
+
+    - debug:
+        var: system_packages
+
+    - name: Install system packages
+      apt:
+        name: "{{ system_packages.stdout_lines }}"
+        state: latest
+      when: repository_system_packages
+
+    - name: Check for dataset
+      stat:
+        path: "/srv/classrooms/{{ git_repo }}/dataset"
+      register: repository_dataset
 
     - name: Symlink dataset
       ansible.builtin.file:
@@ -50,6 +74,12 @@
         group: root
         state: link
       with_items: "{{ users_json }}"
+      when: repository_dataset.stat.exists and repository_dataset.stat.isdir
+
+    - name: Check for notebooks
+      stat:
+        path: "/srv/classrooms/{{ git_repo }}/notebooks"
+      register: repository_notebooks
 
     - name: Copy shared notebooks
       ansible.builtin.copy:
@@ -60,3 +90,12 @@
         mode: "0750"
         remote_src: yes
       with_items: "{{ users_json }}"
+      when: repository_notebooks.stat.exists and repository_notebooks.stat.isdir
+
+    - name: Rebuild JupyterLab
+      ansible.builtin.command: jupyter lab build --dev-build=False --minimize=True
+
+    - name: Restart JupyterLab server
+      systemd:
+        state: restarted
+        name: jupyterhub
