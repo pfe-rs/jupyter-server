@@ -9,6 +9,10 @@
       prompt: Server's (sub)domain
       default: "py.pfe.rs"
       private: no
+    - name: user_shell
+      prompt: Default user login shell
+      default: "/sbin/nologin"
+      private: no
   remote_user: root
 
   tasks:
@@ -120,7 +124,7 @@
         dest: /etc/users.json
         owner: root
         group: root
-        mode: "0640"
+        mode: "0400"
 
     - name: Add NodeSource GPG key
       ansible.builtin.get_url:
@@ -231,7 +235,16 @@
         home: "/home/{{ item.username }}"
         name: "{{ item.username }}"
         password: "{{ item.password | password_hash('sha512') }}"
-        shell: /sbin/nologin
+        update_password: always
+        shell: "{{ user_shell }}"
         system: yes
         comment: "{{ item.name }}"
       with_items: "{{ users_json }}"
+
+    - name: Install custom utilities
+      ansible.builtin.copy:
+        src: utils/
+        dest: /usr/local/bin/
+        owner: root
+        group: root
+        mode: "0755"

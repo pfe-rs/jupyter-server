@@ -30,6 +30,10 @@ Potrebno je napraviti `autodetection.json` fajl u `users` direktorijumu sa slede
 ```
 Nakon toga pokrenuti `users.py` opet (ili po prvi put) i on će pokušati da automatski detektuje koji nalog pripada kojem polazniku. Ukoliko za nekog polaznika ne uspe, proveriti da li je dobro postavljen nadimak na Discord ili ručno dodati u `users.json` kao `discord_id` polje sa Discord identifikatorom polaznika. Kad je to spremno, pokrenuti `send_user_auth.py` kako bi se polaznicima poslali kredencijali preko Discord DM.
 
+### Arhiviranje korisničkih datoteka
+
+Pozivom komande `jupyterhub_archive.sh` se u radni direktorijum arhiviraju svi JupyterHub podaci korisnika. Unutar `jupyterhub_YYYY-MM-DDTHH:MM:SS.zip` se nalaze zasebno arhivirani direktorijumi, gde je direktorijum svakog korisnika enkriptovan njegovom šifrom.
+
 ## Konfiguracija
 Glavni deo servera podešava se kroz [Ansible](https://www.ansible.com/). Nakon što ste podesili parametre iznad, u `hosts.ini` podesite adresu servera koji podešavate i pokrenite:
 ```console

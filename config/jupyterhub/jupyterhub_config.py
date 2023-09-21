@@ -6,3 +6,4 @@ c.JupyterHub.admin_access = True
 c.NotebookApp.terminals_enabled = False
 c.LatexConfig.run_times = 2
 c.LatexConfig.latex_command = 'pdflatex'
+c.LatexConfig.shell_escape = "allow"
