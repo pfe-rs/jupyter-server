@@ -241,6 +241,38 @@
         comment: "{{ item.name }}"
       with_items: "{{ users_json }}"
 
+    - name: Add users to groups
+      ansible.builtin.user:
+        name: "{{ item.username }}"
+        groups: "{{ item.username }}"
+        append: yes
+      with_items: "{{ users_json }}"
+
+    - name: Add admin user to all user groups
+      ansible.builtin.user:
+        name: pfe
+        groups: "{{ users_json | map(attribute='username') | join(',') }}"
+        append: yes
+
+    - name: Create user list directory
+      ansible.builtin.file:
+        path: /home/pfe/ADMINISTRATOR
+        owner: pfe
+        group: pfe
+        state: directory
+        mode: "0550"
+
+    - name: Create user directory symlinks
+      ansible.builtin.file:
+        src: "/home/{{ item.username }}"
+        dest: "/home/pfe/ADMINISTRATOR/{{ item.name }}"
+        owner: "{{ item.username }}"
+        group: "{{ item.username }}"
+        state: link
+        mode: "0750"
+      with_items: "{{ users_json }}"
+      when: item.username != "pfe"
+
     - name: Install custom utilities
       ansible.builtin.copy:
         src: utils/
@@ -248,3 +280,4 @@
         owner: root
         group: root
         mode: "0755"
+        force: true
