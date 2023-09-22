@@ -12,6 +12,14 @@
       prompt: Checkout branch
       default: "master"
       private: no
+    - name: force_copy
+      prompt: Replace existing files
+      default: false
+      private: no
+    - name: rebuild_hub
+      prompt: Rebuild JupyterHub
+      default: false
+      private: no
   remote_user: root
 
   tasks:
@@ -31,7 +39,7 @@
         accept_hostkey: yes
         force: yes
 
-    - name: Check for Python packages
+    - name: Check for required Python packages
       stat:
         path: "/srv/classrooms/{{ git_repo }}/requirements.txt"
       register: repository_python_packages
@@ -42,24 +50,33 @@
         requirements: "/srv/classrooms/{{ git_repo }}/requirements.txt"
       when: repository_python_packages
 
-    - name: Check for system packages
+    - name: Check for custom Python packages
       stat:
         path: "/srv/classrooms/{{ git_repo }}/packages"
+      register: repository_custom_packages
+
+    - name: Install custom Python packages
+      pip:
+        executable: pip3
+        name: "."
+        chdir: "/srv/classrooms/{{ git_repo }}/packages"
+      when: repository_custom_packages.stat.exists and repository_custom_packages.stat.isdir
+
+    - name: Check for required system packages
+      stat:
+        path: "/srv/classrooms/{{ git_repo }}/packages.txt"
       register: repository_system_packages
 
-    - name: List system packages
-      shell: cat "/srv/classrooms/{{ git_repo }}/packages"
+    - name: List required system packages
+      shell: cat "/srv/classrooms/{{ git_repo }}/packages.txt"
       register: system_packages
-      when: repository_system_packages
+      when: repository_system_packages.stat.exists
 
-    - debug:
-        var: system_packages
-
-    - name: Install system packages
+    - name: Install required system packages
       apt:
         name: "{{ system_packages.stdout_lines }}"
         state: latest
-      when: repository_system_packages
+      when: repository_system_packages.stat.exists
 
     - name: Check for dataset
       stat:
@@ -88,14 +105,17 @@
         owner: "{{ item.username }}"
         group: "{{ item.username }}"
         mode: "0750"
+        force: "{{ force_copy }}"
         remote_src: yes
       with_items: "{{ users_json }}"
       when: repository_notebooks.stat.exists and repository_notebooks.stat.isdir
 
     - name: Rebuild JupyterLab
       ansible.builtin.command: jupyter lab build --dev-build=False --minimize=True
+      when: rebuild_hub == True
 
     - name: Restart JupyterLab server
       systemd:
         state: restarted
         name: jupyterhub
+      when: rebuild_hub == True

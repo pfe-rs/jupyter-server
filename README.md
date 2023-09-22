@@ -8,12 +8,14 @@ U direktorijum `keys/` potrebno je da se nalaze dva fajla:
 - `id_ed25519` sa ključem koji je postavljen kao [deploy key](https://docs.github.com/en/developers/overview/managing-deploy-keys#deploy-keys) i koji se koristi za kloniranje privatnih Git repozitorijuma sa PFE organizacije.
 
 ## Korisnici
-U direktorijumu `users` napravite fajl pod nazivom `users.txt` i u njega stavite imena i prezimena svih polaznika, neošišanom latinicom. Zatim pokrenite `python users.py < users.txt` iz tog direktorijuma kako biste generisali `users.json` fajl sa njihovim imenima, prezimenima, korisničkim imenima i lozinkama koji se koristi za pravljenje njihovih naloga na serveru, kao i za prikazivanje punih imena u rezultatima na tabli.
+U direktorijumu `users` napravite fajl pod nazivom `users.txt` i u njega stavite imena i prezimena svih polaznika, neošišanom latinicom. Zatim pokrenite `users.py` iz tog direktorijuma kako biste generisali `users.json` fajl sa njihovim imenima, prezimenima, korisničkim imenima i lozinkama koji se koristi za pravljenje njihovih naloga na serveru, kao i za prikazivanje punih imena u rezultatima na tabli.
 
 Nakon generisanja dodajte korisnika `pfe` u `users.json` ručno. On će služiti kao administrator JupyterHub instance, i lozinka za tog korisnika će takođe biti lozinka za tablu sa rezultatima testova.
 
+Administrativni korisnik `pfe` ima mogućnost logovanja kao bilo koji drugi korisnik kroz *File > Hub Control Panel > Admin > Access Server*, a takođe može da pregleda (bez izmena) sve datoteke korisnika unutar `ADMINISTRATOR` direktorijuma u svom radnom prostoru.
+
 ### Distribucija lozinki
-Postoje dva automatizovana načina da se polaznicima podele njihove JupyterHub lozinke: štampanjem na papiru ili preko Discord.
+Postoje dva automatizovana načina da se polaznicima podele njihove JupyterHub lozinke: štampanjem na papiru ili preko Discord-a.
 
 #### Štampanje kredencijala
 Potrebno je u `users` direktorijumu pokrenuti `print_user_auth.py` skriptu, ona će izgenerisati `users.pdf` fajl koji je onda moguće odštampati i iseći kako bi se polaznicima podelili kredencijali.
@@ -66,6 +68,7 @@ Repozitorijum za radionicu treba da bude struktuiran na sledeći način:
   - `setup.py`: meta-paket koji sadrži informacije o bibliotekama ([primer](https://github.com/pfe-rs/dos-radionica/blob/master/packages/setup.py))
 - `LICENSE`: licenca pod kojom je kod objavljen, poželjno [MIT](https://mit-license.org/)
 - `requirements.txt`: lista Python paketa (sa fiksiranom [minor](https://semver.org/#summary) verzijom) koji su neophodni za izvršavanje koda u sveskama
+- `packages.txt`: lista sistemskih paketa koji su neophodni za izvršavanje koda u sveskama
 
 ```
 ├─ dataset/
@@ -79,5 +82,6 @@ Repozitorijum za radionicu treba da bude struktuiran na sledeći način:
 │  └─ biblioteka
 │     └─ __init__.py
 ├─ LICENSE
+├─ packages.txt
 └─ requirements.txt
 ```
