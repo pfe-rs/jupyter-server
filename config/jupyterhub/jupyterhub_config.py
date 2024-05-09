@@ -7,3 +7,5 @@ c.NotebookApp.terminals_enabled = False
 c.LatexConfig.run_times = 2
 c.LatexConfig.latex_command = 'pdflatex'
 c.LatexConfig.shell_escape = "allow"
+# Disable JupyterLab as it does not properly support Matplotlib widgets
+c.Spawner.default_url = '/tree'
